@@ -10,10 +10,14 @@ app.use(express.json());
 app.use(cors());
 
 app.post("/keitaro-postback", async (req, res) => {
-    const { affiliate_network_name } = req.query;
+    const { affiliate_network_name, status, revenue, subid } = req.query;
 
     const message = `Полученные данные от Keitaro:
-affiliate_network_name: ${affiliate_network_name}`;
+affiliate_network_name: ${affiliate_network_name},
+status: ${status},
+subid: ${subid},
+revenue: ${revenue},
+`;
 
     try {
         await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
