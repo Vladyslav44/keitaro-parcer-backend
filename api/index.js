@@ -15,58 +15,34 @@ app.use(cors());
 let messageCounter = 0;
 let totalPayout = 0;
 
-let messageQueue = []; // Массив для хранения задач
-let isProcessing = false; // Флаг для отслеживания, обрабатывается ли очередь
+app.post("/keitaro-postback", async (req, res) => {
+    const { affiliate_network_name, status, revenue, subid } = req.query;
 
-const processQueue = async () => {
-    // Если уже обрабатываем, выходим
-    if (isProcessing || messageQueue.length === 0) {
-        return;
-    }
+    messageCounter++;
 
-    isProcessing = true; // Устанавливаем флаг
+    const payout = parseFloat(revenue) || 0;
 
-    // Обрабатываем задачи из очереди
-    while (messageQueue.length > 0) {
-        const { payout, affiliate_network_name, status, subid } = messageQueue.shift(); // Получаем первую задачу из очереди
-
-        messageCounter++;
-
-        const message = `
+    const message = `
 ${String(`${messageCounter}.`).padEnd(3)}  🔻 Status: ${status},
       🔹 Lead ID: #${subid}
       🔹 AN: ${affiliate_network_name}
       💵 Payout: ${payout}
-      💵 Total payout: ${totalPayout}`;
+      💵 Total payout: ${payout + totalPayout}`;
 
-        totalPayout += payout;
+    totalPayout += payout;
 
-        try {
-            await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                chat_id: process.env.TELEGRAM_CHAT_ID,
-                text: message,
-                parse_mode: 'Markdown'
-            });
-            console.log(`Сообщение отправлено: ${messageCounter}`);
-        } catch (error) {
-            console.error("Ошибка при отправке сообщения в Telegram:", error);
-        }
+    try {
+        await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            chat_id: process.env.TELEGRAM_CHAT_ID,
+            text: message,
+            parse_mode: 'Markdown'
+        });
+
+        res.send({ success: true, message: "Postback обработан и отправлен в Telegram" });
+    } catch (error) {
+        console.error("Ошибка при отправке в Telegram:", error);
+        res.status(500).send({ success: false, message: "Не удалось отправить данные в Telegram" });
     }
-
-    isProcessing = false; // Сбрасываем флаг после обработки
-};
-
-app.post("/keitaro-postback", async (req, res) => {
-    const { affiliate_network_name, status, revenue, subid } = req.query;
-    const payout = parseFloat(revenue) || 0;
-
-    // Добавляем задачу в очередь
-    messageQueue.push({ payout, affiliate_network_name, status, subid });
-
-    // Запускаем обработку очереди
-    processQueue();
-
-    res.send({ success: true, message: "Postback обработан и добавлен в очередь для отправки в Telegram" });
 });
 
 const sendTotalMessage = async () => {
@@ -122,33 +98,3 @@ module.exports = app;
 //         console.error("Ошибка при отправке в Telegram:", error);
 //     }
 // };
-
-// app.post("/keitaro-postback", async (req, res) => {
-//     const { affiliate_network_name, status, revenue, subid } = req.query;
-//
-//     messageCounter++;
-//
-//     const payout = parseFloat(revenue) || 0;
-//
-//     const message = `
-// ${String(`${messageCounter}.`).padEnd(3)}  🔻 Status: ${status},
-//       🔹 Lead ID: #${subid}
-//       🔹 AN: ${affiliate_network_name}
-//       💵 Payout: ${payout}
-//       💵 Total payout: ${payout + totalPayout}`;
-//
-//     totalPayout += payout;
-//
-//     try {
-//         await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-//             chat_id: process.env.TELEGRAM_CHAT_ID,
-//             text: message,
-//             parse_mode: 'Markdown'
-//         });
-//
-//         res.send({ success: true, message: "Postback обработан и отправлен в Telegram" });
-//     } catch (error) {
-//         console.error("Ошибка при отправке в Telegram:", error);
-//         res.status(500).send({ success: false, message: "Не удалось отправить данные в Telegram" });
-//     }
-// });
