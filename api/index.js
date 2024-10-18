@@ -10,15 +10,16 @@ app.use(express.json());
 app.use(cors());
 
 app.post("/keitaro-postback", async (req, res) => {
-    const data = req.body;
-    console.log("Полученные данные от Keitaro:", data);
+    const { affiliate_network_name } = req.query;
 
-    const message = `Полученные данные от Keitaro:\n${JSON.stringify(data, null, 2)}`;
+    const message = `Полученные данные от Keitaro:
+affiliate_network_name: ${affiliate_network_name}`;
 
     try {
         await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
             chat_id: process.env.TELEGRAM_CHAT_ID,
             text: message,
+            parse_mode: 'Markdown'
         });
 
         res.send({ success: true, message: "Postback обработан и отправлен в Telegram" });
