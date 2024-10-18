@@ -9,6 +9,7 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
+
 app.post("/keitaro-postback", async (req, res) => {
     const data = req.body;
     console.log("Полученные данные от Keitaro:", data);
