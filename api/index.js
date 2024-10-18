@@ -44,14 +44,16 @@ app.post("/keitaro-postback", async (req, res) => {
 
     messageCounter++;
 
+    const payout = parseFloat(revenue) || 0;
+
     const message = `
 ${String(`${messageCounter}.`).padEnd(3)}  🔻 Status: ${status},
-      🔹 Lead ID: #${subid},
-      🔹 AN: ${affiliate_network_name},
-      💵 Payout: ${revenue}
-      💵 Total payout: ${revenue + totalPayout}`;
+      🔹 Lead ID: #${subid}
+      🔹 AN: ${affiliate_network_name}
+      💵 Payout: ${payout}
+      💵 Total payout: ${payout + totalPayout}`;
 
-    totalPayout += revenue;
+    totalPayout += payout;
 
     try {
         await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
