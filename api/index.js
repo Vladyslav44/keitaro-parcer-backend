@@ -26,8 +26,6 @@ async function connectToDatabase() {
     try {
         await client.connect();
         console.log('Connected to MongoDB');
-        const db = client.db(); // Здесь вы можете указать имя базы данных, если нужно
-        // Используйте переменную db для работы с коллекциями
     } catch (error) {
         console.error('MongoDB connection error:', error);
     }
