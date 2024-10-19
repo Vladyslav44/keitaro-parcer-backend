@@ -12,7 +12,16 @@ dotenv.config();
 
 // Подключение к базе данных
 const connectDB = async () => {
-    const client = new MongoClient(process.env.MONGODB_URI);
+    if (dbClient) {
+        return dbClient; // Возвращаем уже существующий клиент
+    }
+    const client = new MongoClient(process.env.MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 5000, // Таймаут подключения (5 секунд)
+        connectTimeoutMS: 10000, // Таймаут ожидания подключения (10 секунд)
+        socketTimeoutMS: 45000, // Таймаут сокета (45 секунд)
+    });
     await client.connect();
     console.log("MongoDB Connected...");
     return client;
@@ -54,10 +63,18 @@ const initializeTotals = async () => {
 };
 
 // Запускаем подключение к базе данных и инициализацию
-connectDB().then(client => {
-    dbClient = client;
-    initializeTotals();
-});
+connectDB()
+    .then(client => {
+        dbClient = client;
+        initializeTotals()
+            .catch(error => {
+                console.error("Ошибка при инициализации данных:", error);
+            });
+    })
+    .catch(error => {
+        console.error("Ошибка подключения к MongoDB:", error);
+        process.exit(1); // Завершаем процесс при ошибке подключения
+    });
 
 // Обработка POST-запроса
 app.post("/keitaro-postback", (req, res) => {
