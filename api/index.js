@@ -12,7 +12,7 @@ dotenv.config();
 
 // Подключение к базе данных
 const connectDB = async () => {
-    const client = new MongoClient(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    const client = new MongoClient(process.env.MONGODB_URI);
     await client.connect();
     console.log("MongoDB Connected...");
     return client;
