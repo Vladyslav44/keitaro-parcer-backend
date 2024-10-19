@@ -1,0 +1,16 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    - duration: 20
+      arrivalRate: 5  # Устанавливаем 5 запросов в секунду
+      rampTo: 5        # Увеличиваем до 5 запросов в секунду
+
+scenarios:
+  - flow:
+      - post:
+          url: '/keitaro-postback'
+          qs:
+            affiliate_network_name: 'ExampleNetwork'
+            revenue: '10'
+            subid: '1234'
+            country: 'PL'
