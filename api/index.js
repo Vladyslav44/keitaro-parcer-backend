@@ -67,6 +67,7 @@ app.post("/keitaro-postback", (req, res) => {
         const payout = parseFloat(revenue) || 0;
 
         const message = `
+        ${country} - test
 ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} DONE
       🔹 Lead ID: #${subid}
       🔹 AN: ${affiliate_network_name}
