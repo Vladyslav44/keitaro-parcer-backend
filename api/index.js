@@ -21,18 +21,6 @@ let messageCounter = 0;
 
 const queue = new PQueue({ concurrency: 1, autoStart: true });
 
-async function connectToDatabase() {
-    const client = new MongoClient(process.env.MONGODB_URI);
-    try {
-        await client.connect();
-        console.log('Connected to MongoDB');
-    } catch (error) {
-        console.error('MongoDB connection error:', error);
-    }
-}
-
-connectToDatabase().then(r => r);
-
 // Обработка POST-запроса
 app.post("/keitaro-postback", (req, res) => {
     const { affiliate_network_name, revenue, subid, country } = req.query;
@@ -79,7 +67,7 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} SEND
 });
 
 cron.schedule('0 0 * * *', () => {
-    sendTotalMessage(messageCounter, totalPayout).then(r => r)
+    sendTotalMessage(messageCounter, totalPayout);
     totalPayout = 0;
     messageCounter = 0;
     console.log("Database cleared and totals reset at midnight.");
