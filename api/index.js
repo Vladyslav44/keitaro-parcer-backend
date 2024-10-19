@@ -6,8 +6,18 @@ const cors = require("cors");
 const { sendTotalMessage } = require('./sendTotalMessage');
 const PQueue = require("p-queue").default; // Обратите внимание на .default
 const { COUNTRY_FLAGS_MAP } = require('../constants/constants');
+const { MongoClient } = require('mongodb'); // Импортируем MongoClient
 
 dotenv.config();
+
+// Подключение к базе данных
+const connectDB = async () => {
+    const client = new MongoClient(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    await client.connect();
+    console.log("MongoDB Connected...");
+    return client;
+};
+
 const app = express();
 
 app.use(express.json());
@@ -17,7 +27,35 @@ let totalPayout = 0;
 let messageCounter = 0;
 
 const queue = new PQueue({ concurrency: 1, autoStart: true });
+let dbClient;
 
+// Функция для получения данных из базы
+const getTotals = async () => {
+    const db = dbClient.db("postbacks"); // Укажите название вашей базы данных
+    const totals = await db.collection("totals").findOne({}); // Получаем один документ
+    return totals || { totalPayout: 0, messageCounter: 0 }; // Возвращаем объект, если данных нет
+};
+
+// Функция для сохранения данных в базу
+const saveTotals = async (totalPayout, messageCounter) => {
+    const db = dbClient.db("postbacks"); // Укажите название вашей базы данных
+    await db.collection("totals").updateOne({}, { $set: { totalPayout, messageCounter } }, { upsert: true }); // Обновляем или создаем документ
+};
+
+// Инициализация значений из базы данных при запуске сервера
+const initializeTotals = async () => {
+    const totals = await getTotals();
+    totalPayout = totals.totalPayout;
+    messageCounter = totals.messageCounter;
+};
+
+// Запускаем подключение к базе данных и инициализацию
+connectDB().then(client => {
+    dbClient = client;
+    initializeTotals();
+});
+
+// Обработка POST-запроса
 app.post("/keitaro-postback", (req, res) => {
     const { affiliate_network_name, revenue, subid, country } = req.query;
 
@@ -35,6 +73,8 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} DONE
       💵 Total payout: ${payout + totalPayout}`;
 
         totalPayout += payout;
+
+        await saveTotals(totalPayout, messageCounter); // Сохраняем в базу
 
         try {
             await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -62,8 +102,14 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} DONE
         });
 });
 
-
-cron.schedule('0 0 * * *', () => sendTotalMessage(messageCounter, totalPayout), { timezone: 'Europe/Kiev' });
+// Задача для очистки базы данных в полночь
+cron.schedule('0 0 * * *', async () => {
+    const db = dbClient.db("postbacks"); // Укажите название вашей базы данных
+    await db.collection("totals").deleteMany({}); // Очищаем коллекцию
+    totalPayout = 0; // Сбрасываем переменные
+    messageCounter = 0;
+    console.log("Database cleared and totals reset at midnight.");
+}, { timezone: 'Europe/Kiev' });
 
 app.get("/", (req, res) => res.send("Express ready on Vercel"));
 
