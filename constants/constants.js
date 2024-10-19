@@ -1,0 +1,21 @@
+const COUNTRY_CODES = {
+    PL: 'PL',
+    AT: 'AT',
+    TR: 'TR'
+}
+
+const EMOJI_CODES = {
+    POLAND: '\u{1F1F5}\u{1F1F1}',
+    AUSTRIA: '\u{1F1E6}\u{1F1F9}',
+    TURKEY: '\u{1F1F9}\u{1F1F7}'
+}
+
+const COUNTRY_FLAGS_MAP = {
+    [COUNTRY_CODES.PL]: EMOJI_CODES.POLAND,
+    [COUNTRY_CODES.AT]: EMOJI_CODES.AUSTRIA,
+    [COUNTRY_CODES.TR]: EMOJI_CODES.TURKEY
+}
+
+module.exports = {
+    COUNTRY_FLAGS_MAP
+}
