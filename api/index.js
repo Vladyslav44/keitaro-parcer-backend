@@ -11,6 +11,7 @@ const { MongoClient } = require('mongodb'); // Импортируем MongoClien
 
 dotenv.config();
 
+
 // Подключение к базе данных
 const connectDB = async () => {
     const client = new MongoClient(process.env.MONGODB_URI);
