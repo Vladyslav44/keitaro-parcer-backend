@@ -11,6 +11,7 @@ const { MongoClient } = require('mongodb'); // Импортируем MongoClien
 dotenv.config();
 let cachedDbClient = null;
 
+
 // Подключение к базе данных
 const connectDB = async () => {
     try {
