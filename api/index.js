@@ -31,7 +31,13 @@ async function connectToDatabase() {
     }
 }
 
-connectToDatabase();
+connectToDatabase().then(() => {
+    // Здесь можно продолжать инициализацию приложения
+    app.listen(3000, () => console.log(`Server ready on port 3000}.`));
+}).catch(error => {
+    console.error('Error during database connection:', error);
+    process.exit(1); // Выход, если не удалось подключиться к БД
+});
 
 // Обработка POST-запроса
 app.post("/keitaro-postback", (req, res) => {
@@ -77,7 +83,7 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} SEND
             res.status(500).send({ success: false, message: "Ошибка при обработке запроса" });
         });
 });
-
+console.log('pidor');
 cron.schedule('0 0 * * *', () => {
     sendTotalMessage(messageCounter, totalPayout);
     totalPayout = 0;
@@ -87,6 +93,6 @@ cron.schedule('0 0 * * *', () => {
 
 app.get("/", (req, res) => res.send("Express ready on Vercel"));
 
-app.listen(3000, () => console.log("Server ready on port 3000."));
+// app.listen(3000, () => console.log("Server ready on port 3000."));
 
 module.exports = app;
