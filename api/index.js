@@ -9,22 +9,22 @@ const { COUNTRY_FLAGS_MAP } = require('../constants/constants');
 const { MongoClient } = require('mongodb'); // Импортируем MongoClient
 
 dotenv.config();
+let cachedDbClient = null;
 
 // Подключение к базе данных
 const connectDB = async () => {
-    if (dbClient) {
-        return dbClient; // Возвращаем уже существующий клиент
+    try {
+        if (cachedDbClient) {
+            return cachedDbClient;
+        }const client = new MongoClient(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true, poolSize: 5 });
+        await client.connect();
+        console.log("MongoDB Connected...");
+        cachedDbClient = client;
+        return cachedDbClient;
+    } catch (error) {
+        console.error("Ошибка подключения к MongoDB:", error);
+        throw new Error("Ошибка подключения к базе данных");
     }
-    const client = new MongoClient(process.env.MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 5000, // Таймаут подключения (5 секунд)
-        connectTimeoutMS: 10000, // Таймаут ожидания подключения (10 секунд)
-        socketTimeoutMS: 45000, // Таймаут сокета (45 секунд)
-    });
-    await client.connect();
-    console.log("MongoDB Connected...");
-    return client;
 };
 
 const app = express();
@@ -48,11 +48,8 @@ const getTotals = async () => {
 
 // Функция для сохранения данных в базу
 const saveTotals = async (totalPayout, messageCounter) => {
-    if (!dbClient) {
-        throw new Error("dbClient не инициализирован");
-    }
-    const db = dbClient.db("postbacks");
-    await db.collection("totals").updateOne({}, { $set: { totalPayout, messageCounter } }, { upsert: true });
+    const db = dbClient.db("postbacks"); // Укажите название вашей базы данных
+    await db.collection("totals").updateOne({}, { $set: { totalPayout, messageCounter } }, { upsert: true }); // Обновляем или создаем документ
 };
 
 // Инициализация значений из базы данных при запуске сервера
@@ -63,18 +60,11 @@ const initializeTotals = async () => {
 };
 
 // Запускаем подключение к базе данных и инициализацию
-connectDB()
-    .then(client => {
-        dbClient = client;
-        initializeTotals()
-            .catch(error => {
-                console.error("Ошибка при инициализации данных:", error);
-            });
-    })
-    .catch(error => {
-        console.error("Ошибка подключения к MongoDB:", error);
-        process.exit(1); // Завершаем процесс при ошибке подключения
-    });
+
+connectDB().then(client => {
+    dbClient = client;
+    initializeTotals();
+});
 
 // Обработка POST-запроса
 app.post("/keitaro-postback", (req, res) => {
@@ -87,7 +77,6 @@ app.post("/keitaro-postback", (req, res) => {
         const payout = parseFloat(revenue) || 0;
 
         const message = `
-        ${country} - test
 ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} DONE
       🔹 Lead ID: #${subid}
       🔹 AN: ${affiliate_network_name}
