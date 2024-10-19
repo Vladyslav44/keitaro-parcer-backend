@@ -4,7 +4,7 @@ const cron = require('node-cron');
 const express = require("express");
 const cors = require("cors");
 const { sendTotalMessage } = require('./sendTotalMessage');
-const PQueue = require('p-queue'); // Импортируем PQueue
+const PQueue = require("p-queue").default; // Обратите внимание на .default
 const { COUNTRY_FLAGS_MAP } = require('../constants/constants');
 
 dotenv.config();
