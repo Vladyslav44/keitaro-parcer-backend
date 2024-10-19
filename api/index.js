@@ -4,10 +4,7 @@ const cron = require('node-cron');
 const express = require("express");
 const cors = require("cors");
 const { sendTotalMessage } = require('./sendTotalMessage');
-let PQueue;
-(async () => {
-    PQueue = (await import('p-queue')).default; // Используем ESM импорт
-})();
+const PQueue = require('p-queue'); // Импортируем PQueue
 const { COUNTRY_FLAGS_MAP } = require('../constants/constants');
 
 dotenv.config();
@@ -25,7 +22,7 @@ app.post("/keitaro-postback", (req, res) => {
     const { affiliate_network_name, revenue, subid, country } = req.query;
 
     // Добавляем обработку запроса в очередь
-    queue.add(async () => {
+    const jobPromise = queue.add(async () => {
         messageCounter++;
 
         const payout = parseFloat(revenue) || 0;
@@ -48,12 +45,23 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} DONE
             console.log(`Message sent: ${message}`); // Логируем успешную отправку
         } catch (error) {
             console.error("Ошибка при отправке в Telegram:", error);
+            throw error; // Пробрасываем ошибку, чтобы она была поймана ниже
         }
     });
 
-    // Отправляем ответ сразу после добавления в очередь
-    res.send({ success: true, message: "Postback добавлен в очередь" });
+    // Обработка результата или ошибки из Promise
+    jobPromise
+        .then(() => {
+            // Успешно добавлено в очередь
+            res.send({ success: true, message: "Postback добавлен в очередь" });
+        })
+        .catch((error) => {
+            // Обработка ошибки
+            console.error("Ошибка при добавлении в очередь:", error);
+            res.status(500).send({ success: false, message: "Ошибка при обработке запроса" });
+        });
 });
+
 
 cron.schedule('0 0 * * *', () => sendTotalMessage(messageCounter, totalPayout), { timezone: 'Europe/Kiev' });
 
