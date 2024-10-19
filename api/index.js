@@ -33,7 +33,7 @@ async function connectToDatabase() {
     }
 }
 
-connectToDatabase();
+connectToDatabase().then(r => r);
 
 // Обработка POST-запроса
 app.post("/keitaro-postback", (req, res) => {
@@ -81,7 +81,7 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} SEND
 });
 
 cron.schedule('0 0 * * *', () => {
-    sendTotalMessage(messageCounter, totalPayout)
+    sendTotalMessage(messageCounter, totalPayout).then(r => r)
     totalPayout = 0;
     messageCounter = 0;
     console.log("Database cleared and totals reset at midnight.");
