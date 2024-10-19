@@ -7,8 +7,6 @@ const { sendTotalMessage } = require('./sendTotalMessage');
 const PQueue = require("p-queue").default;
 const { COUNTRY_FLAGS_MAP } = require('../constants/constants');
 
-const { MongoClient } = require('mongodb'); // Импортируем MongoClient
-
 dotenv.config();
 
 const app = express();
