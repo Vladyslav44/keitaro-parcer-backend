@@ -11,6 +11,14 @@ const { MongoClient } = require('mongodb'); // Импортируем MongoClien
 
 dotenv.config();
 
+// Подключение к базе данных
+const connectDB = async () => {
+    const client = new MongoClient(process.env.MONGODB_URI);
+    await client.connect();
+    console.log("MongoDB Connected...");
+    return client;
+};
+
 const app = express();
 
 app.use(express.json());
@@ -21,22 +29,39 @@ let messageCounter = 0;
 
 const queue = new PQueue({ concurrency: 1, autoStart: true });
 
-async function connectToDatabase() {
-    const client = new MongoClient(process.env.MONGODB_URI);
-    try {
-        await client.connect();
-        console.log('Connected to MongoDB');
-    } catch (error) {
-        console.error('MongoDB connection error:', error);
-    }
-}
+let dbClient;
 
-connectToDatabase().then(() => {
-    // Здесь можно продолжать инициализацию приложения
-    app.listen(3000, () => console.log(`Server ready on port 3000}.`));
+// Функция для получения данных из базы
+const getTotals = async () => {
+    const db = dbClient.db("postbacks"); // Укажите название вашей базы данных
+    const totals = await db.collection("totals").findOne({}); // Получаем один документ
+    return totals || { totalPayout: 0, messageCounter: 0 }; // Возвращаем объект, если данных нет
+};
+
+// Функция для сохранения данных в базу
+const saveTotals = async (totalPayout, messageCounter) => {
+    const db = dbClient.db("postbacks"); // Укажите название вашей базы данных
+    await db.collection("totals").updateOne({}, { $set: { totalPayout, messageCounter } }, { upsert: true }); // Обновляем или создаем документ
+};
+
+// Инициализация значений из базы данных при запуске сервера
+const initializeTotals = async () => {
+    const totals = await getTotals();
+    totalPayout = totals.totalPayout;
+    messageCounter = totals.messageCounter;
+};
+
+// Запускаем подключение к базе данных и инициализацию
+connectDB().then(client => {
+    dbClient = client;
+
+    // Инициализация значений после подключения к базе данных
+    return initializeTotals();
+}).then(() => {
+    app.listen(3000, () => console.log("Server ready on port 3000."));
 }).catch(error => {
-    console.error('Error during database connection:', error);
-    process.exit(1); // Выход, если не удалось подключиться к БД
+    console.error('Error during database connection or initialization:', error);
+    process.exit(1); // Завершение процесса при ошибке
 });
 
 // Обработка POST-запроса
@@ -57,6 +82,8 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} SEND
       💵 Total payout: ${payout + totalPayout}`;
 
         totalPayout += payout;
+
+        await saveTotals(totalPayout, messageCounter); // Сохраняем в базу
 
         try {
             await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -83,10 +110,13 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} SEND
             res.status(500).send({ success: false, message: "Ошибка при обработке запроса" });
         });
 });
-console.log('pidor');
-cron.schedule('0 0 * * *', () => {
+
+// Задача для очистки базы данных в полночь
+cron.schedule('0 0 * * *', async () => {
+    const db = dbClient.db("postbacks"); // Укажите название вашей базы данных
+    await db.collection("totals").deleteMany({}); // Очищаем коллекцию
     sendTotalMessage(messageCounter, totalPayout);
-    totalPayout = 0;
+    totalPayout = 0; // Сбрасываем переменные
     messageCounter = 0;
     console.log("Database cleared and totals reset at midnight.");
 }, { timezone: 'Europe/Kiev' });
