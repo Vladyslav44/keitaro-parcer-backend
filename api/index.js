@@ -7,6 +7,8 @@ const { sendTotalMessage } = require('./sendTotalMessage');
 const PQueue = require("p-queue").default;
 const { COUNTRY_FLAGS_MAP } = require('../constants/constants');
 
+const { MongoClient } = require('mongodb'); // Импортируем MongoClient
+
 dotenv.config();
 
 const app = express();
@@ -18,6 +20,18 @@ let totalPayout = 0;
 let messageCounter = 0;
 
 const queue = new PQueue({ concurrency: 1, autoStart: true });
+
+async function connectToDatabase() {
+    const client = new MongoClient(process.env.MONGODB_URI);
+    try {
+        await client.connect();
+        console.log('Connected to MongoDB');
+    } catch (error) {
+        console.error('MongoDB connection error:', error);
+    }
+}
+
+connectToDatabase();
 
 // Обработка POST-запроса
 app.post("/keitaro-postback", (req, res) => {
