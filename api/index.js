@@ -39,8 +39,11 @@ const getTotals = async () => {
 
 // Функция для сохранения данных в базу
 const saveTotals = async (totalPayout, messageCounter) => {
-    const db = dbClient.db("postbacks"); // Укажите название вашей базы данных
-    await db.collection("totals").updateOne({}, { $set: { totalPayout, messageCounter } }, { upsert: true }); // Обновляем или создаем документ
+    if (!dbClient) {
+        throw new Error("dbClient не инициализирован");
+    }
+    const db = dbClient.db("postbacks");
+    await db.collection("totals").updateOne({}, { $set: { totalPayout, messageCounter } }, { upsert: true });
 };
 
 // Инициализация значений из базы данных при запуске сервера
