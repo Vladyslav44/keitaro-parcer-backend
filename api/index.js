@@ -30,7 +30,7 @@ const connectDB = async () => {
     try {
         if (cachedDbClient) {
             return cachedDbClient;
-        }const client = new MongoClient(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true, poolSize: 5 });
+        }const client = new MongoClient(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
         await client.connect();
         console.log("MongoDB Connected...");
         cachedDbClient = client;
