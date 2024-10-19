@@ -27,6 +27,7 @@ let totalPayout = 0;
 let messageCounter = 0;
 
 const queue = new PQueue({ concurrency: 1, autoStart: true });
+
 let dbClient;
 
 // Функция для получения данных из базы
