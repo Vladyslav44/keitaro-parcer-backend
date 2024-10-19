@@ -13,6 +13,19 @@ let cachedDbClient = null;
 
 
 // Подключение к базе данных
+
+const app = express();
+
+app.use(express.json());
+app.use(cors());
+
+let totalPayout = 0;
+let messageCounter = 0;
+
+const queue = new PQueue({ concurrency: 1, autoStart: true });
+
+let dbClient;
+
 const connectDB = async () => {
     try {
         if (cachedDbClient) {
@@ -27,18 +40,6 @@ const connectDB = async () => {
         throw new Error("Ошибка подключения к базе данных");
     }
 };
-
-const app = express();
-
-app.use(express.json());
-app.use(cors());
-
-let totalPayout = 0;
-let messageCounter = 0;
-
-const queue = new PQueue({ concurrency: 1, autoStart: true });
-
-let dbClient;
 
 // Функция для получения данных из базы
 const getTotals = async () => {
