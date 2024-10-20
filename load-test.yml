@@ -1,16 +1,15 @@
 config:
   target: 'https://keitaro-parcer-backend.vercel.app'
   phases:
-    - duration: 2    # Длительность теста в секундах
-      arrivalRate: 3 # Отправляем 100 запросов в секунду (это максимальное количество)
-      rampTo: 3      # Увеличиваем до 100 запросов в секунду
+    - duration: 2 # Длительность теста в секундах
+      arrivalRate: 1 # Отправляем клво запросов в секунду
 
 scenarios:
   - flow:
       - post:
           url: '/keitaro-postback'
           qs:
-            affiliate_network_name: 'ExampleNetwork'
+            affiliate_network_name: 'zalupa'
             revenue: '10'
             subid: '1234'
             country: 'PL'
