@@ -90,20 +90,14 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} SEND
             res.status(500).send({ success: false, message: "Ошибка при обработке запроса" });
         });
 });
-setInterval(async () => {
-    await sql`DELETE FROM payout_data;`;
+
+cron.schedule('0 0 * * *', async () => {
     sendTotalMessage(messageCounter, totalPayout);
-    console.log("Database cleared.");
+    await sql`DELETE FROM payout_data;`; // Очищаем базу данных
     totalPayout = 0; // Сбрасываем локальные переменные
     messageCounter = 0;
-}, 120000);
-// cron.schedule('0 0 * * *', async () => {
-//     sendTotalMessage(messageCounter, totalPayout);
-//     await sql`DELETE FROM payout_data;`; // Очищаем базу данных
-//     totalPayout = 0; // Сбрасываем локальные переменные
-//     messageCounter = 0;
-//     console.log("Database cleared and totals reset at midnight.");
-// }, { timezone: 'Europe/Kiev' });
+    console.log("Database cleared and totals reset at midnight.");
+}, { timezone: 'Europe/Kiev' });
 
 app.get("/", (req, res) => res.send("Express ready on Vercel"));
 
