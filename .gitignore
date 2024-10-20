@@ -1,12 +1,2 @@
-# Ignore node modules
 node_modules/
-
-# Optional: Ignore .env files if you haven't already
 .env
-
-# Other files and folders to ignore
-.DS_Store
-dist/
-
-.idea/
-.vercel
