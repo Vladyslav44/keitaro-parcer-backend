@@ -1,5 +1,5 @@
 config:
-  target: 'http://localhost:3000'
+  target: 'https://keitaro-parcer-backend.vercel.app'
   phases:
     - duration: 2    # Длительность теста в секундах
       arrivalRate: 3 # Отправляем 100 запросов в секунду (это максимальное количество)
