@@ -90,12 +90,15 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} SEND
             res.status(500).send({ success: false, message: "Ошибка при обработке запроса" });
         });
 });
-setInterval(async () => {
+
+cron.schedule('*/30 * * * * *', async () => {
     sendTotalMessage(messageCounter, totalPayout);
     await sql`DELETE FROM payout_data;`; // Очищаем базу данных
     totalPayout = 0; // Сбрасываем локальные переменные
     messageCounter = 0;
-}, 30000)
+    console.log("Totals sent and database cleared.");
+});
+
 // cron.schedule('0 0 * * *', async () => {
 //     sendTotalMessage(messageCounter, totalPayout);
 //     await sql`DELETE FROM payout_data;`; // Очищаем базу данных
