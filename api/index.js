@@ -1,23 +1,46 @@
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
+const express = require('express')
+const cors = require('cors');
+require('dotenv').config();
+const port = process.env.PORT || 5844;
+const mongoURI = process.env.MONGODB_URI;
+const { MongoClient, ServerApiVersion } = require("mongodb");
 
+//app
 const app = express();
 
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log("Connected to MongoDB"))
-    .catch(error => console.error("Failed to connect to MongoDB:", error));
+//middlewares
+app.use(express.json());
+app.use(cors());
 
-app.get("/check-db", async (req, res) => {
-    try {
-        const result = await mongoose.connection.db.collection("postbacks").findOne();
-        res.send(result ? "DB is reachable!" : "DB is empty!");
-    } catch (error) {
-        console.error("Error accessing the database:", error);
-        res.status(500).send("Error accessing the database: " + error.message);
-    }
+//mongo URI
+const client = new MongoClient(mongoURI, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    },
 });
 
-app.listen(3000, () => console.log("Server ready on port 3000."));
+const run = async () => {
+    try{
+        await client.connect();
 
-module.exports = app;
+        await client.db("admin").command({ ping: 1 });
+        console.log(
+            "Pinged your deployment. You successfully connected to MongoDB!"
+        );
+    }
+    finally{
+
+    }
+}
+
+run().catch(error => console.log)
+
+app.get('/',(req,res)=>{
+    res.send('Car Junction Backend Server Running...')
+})
+
+app.listen(port,()=>{
+    console.log(console.log(`Server is running on port ${port}`))
+})
