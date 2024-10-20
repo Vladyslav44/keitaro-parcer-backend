@@ -91,21 +91,14 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} SEND
         });
 });
 
+// cron.schedule('0 0 * * *', async () => {
 cron.schedule('*/30 * * * * *', async () => {
     sendTotalMessage(messageCounter, totalPayout);
     await sql`DELETE FROM payout_data;`; // Очищаем базу данных
     totalPayout = 0; // Сбрасываем локальные переменные
     messageCounter = 0;
-    console.log("Totals sent and database cleared.");
-});
-
-// cron.schedule('0 0 * * *', async () => {
-//     sendTotalMessage(messageCounter, totalPayout);
-//     await sql`DELETE FROM payout_data;`; // Очищаем базу данных
-//     totalPayout = 0; // Сбрасываем локальные переменные
-//     messageCounter = 0;
-//     console.log("Database cleared and totals reset at midnight.");
-// }, { timezone: 'Europe/Kiev' });
+    console.log("Database cleared and totals reset at midnight.");
+}, { timezone: 'Europe/Kiev' });
 
 app.get("/", (req, res) => res.send("Express ready on Vercel"));
 
