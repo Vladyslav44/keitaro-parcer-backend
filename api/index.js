@@ -4,7 +4,6 @@ const cron = require('node-cron');
 const express = require("express");
 const cors = require("cors");
 const { sendTotalMessage } = require('./sendTotalMessage');
-const PQueue = require("p-queue").default;
 const { COUNTRY_FLAGS_MAP } = require('../constants/constants');
 const { sql } = require("@vercel/postgres");
 
@@ -34,8 +33,6 @@ async function getCurrentTotals() {
     return result.rows.length > 0 ? result.rows[0] : { total_payout: 0, message_counter: 0 };
 }
 
-const queue = new PQueue({ concurrency: 1, autoStart: true });
-
 let totalPayout = 0;
 let messageCounter = 0;
 
@@ -45,13 +42,14 @@ getCurrentTotals().then(({ total_payout, message_counter }) => {
     messageCounter = message_counter;
 });
 
-app.post("/keitaro-postback", (req, res) => {
+app.post("/keitaro-postback", async (req, res) => {
     const { affiliate_network_name, revenue, subid, country } = req.query;
 
-    const jobPromise = queue.add(async () => {
+    try {
         messageCounter++;
 
         const payout = parseFloat(revenue) || 0;
+        totalPayout += payout;
 
         const message = `
 ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} SEND
@@ -60,35 +58,24 @@ ${messageCounter}.  🔻 Status: ${COUNTRY_FLAGS_MAP[country]} SEND
       💵 Payout: ${payout}
       💵 Total payout: ${totalPayout}`;
 
-        totalPayout += payout;
-
         // Сохраняем значения в базе данных
         await sql`
             INSERT INTO payout_data (total_payout, message_counter)
             VALUES (${totalPayout}, ${messageCounter});
         `;
 
-        try {
-            await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                chat_id: process.env.TELEGRAM_CHAT_ID,
-                text: message,
-                parse_mode: 'Markdown'
-            });
-            console.log(`Message sent: ${message}`);
-        } catch (error) {
-            console.error("Ошибка при отправке в Telegram:", error);
-            throw error;
-        }
-    });
-
-    jobPromise
-        .then(() => {
-            res.send({ success: true, message: "Postback добавлен в очередь" });
-        })
-        .catch((error) => {
-            console.error("Ошибка при добавлении в очередь:", error);
-            res.status(500).send({ success: false, message: "Ошибка при обработке запроса" });
+        await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            chat_id: process.env.TELEGRAM_CHAT_ID,
+            text: message,
+            parse_mode: 'Markdown'
         });
+
+        console.log(`Message sent: ${message}`);
+        res.send({ success: true, message: "Postback обработан" });
+    } catch (error) {
+        console.error("Ошибка при обработке запроса:", error);
+        res.status(500).send({ success: false, message: "Ошибка при обработке запроса" });
+    }
 });
 
 cron.schedule('0 0 * * *', async () => {
